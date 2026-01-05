@@ -116,8 +116,7 @@ const auto kTestTasksList = std::tuple_cat(
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-INSTANTIATE_TEST_SUITE_P(NikitinaMaxElem, NikitinaMaxElemTests, kGtestValues,
-                         NikitinaMaxElemTests::PrintTestParam);
+INSTANTIATE_TEST_SUITE_P(NikitinaMaxElem, NikitinaMaxElemTests, kGtestValues, NikitinaMaxElemTests::PrintTestParam);
 
 }  // namespace
 
