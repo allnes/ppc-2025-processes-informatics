@@ -121,9 +121,8 @@ TEST_P(ReduceTests, ReduceTest) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 4> kTestCases = {
-    std::make_tuple(10, 0, "sz_10_r_0"), std::make_tuple(20, 1, "sz_20_r_1"),
-    std::make_tuple(1, 3, "sz_1_r_3"), std::make_tuple(100, 2, "sz_100_r_2")};
+const std::array<TestType, 4> kTestCases = {std::make_tuple(10, 0, "sz_10_r_0"), std::make_tuple(20, 1, "sz_20_r_1"),
+                                            std::make_tuple(1, 3, "sz_1_r_3"), std::make_tuple(100, 2, "sz_100_r_2")};
 
 const auto kTestTasksList =
     std::tuple_cat(ppc::util::AddFuncTask<ReduceSequential, InType>(kTestCases, PPC_SETTINGS_kutergin_v_reduce),
