@@ -10,7 +10,7 @@
 
 namespace kutuzov_i_simpson_integration {
 
-class KutuzovIRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
+class KutuzovISimpsonIntegrationPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
   InType input_data_;
 
   void SetUp() override {
@@ -56,7 +56,7 @@ class KutuzovIRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType>
   }
 };
 
-TEST_P(KutuzovIRunPerfTests, RunPerfModes) {
+TEST_P(KutuzovISimpsonIntegrationPerfTests, RunPerfModes) {
   ExecuteTest(GetParam());
 }
 
@@ -66,8 +66,8 @@ const auto kAllPerfTasks =
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-const auto kPerfTestName = KutuzovIRunPerfTests::CustomPerfTestName;
+const auto kPerfTestName = KutuzovISimpsonIntegrationPerfTests::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(RunModeTests, KutuzovIRunPerfTests, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(RunModeTests, KutuzovISimpsonIntegrationPerfTests, kGtestValues, kPerfTestName);
 
 }  // namespace kutuzov_i_simpson_integration
