@@ -13,7 +13,7 @@
 namespace kutuzov_i_torus_grid {
 const int kLongStringSize = 10'000'000;
 
-class KutuzovIRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
+class KutuzovITorusGridPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
   void SetUp() override {
     message_ = std::string(kLongStringSize, 'a');
     int process_count = -1;
@@ -61,7 +61,7 @@ class KutuzovIRunPerfTests : public ppc::util::BaseRunPerfTests<InType, OutType>
   std::string message_;
 };
 
-TEST_P(KutuzovIRunPerfTests, RunPerfModes) {
+TEST_P(KutuzovITorusGridPerfTests, RunPerfModes) {
   ExecuteTest(GetParam());
 }
 
@@ -70,8 +70,8 @@ const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, KutuzovIThorusGri
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-const auto kPerfTestName = KutuzovIRunPerfTests::CustomPerfTestName;
+const auto kPerfTestName = KutuzovITorusGridPerfTests::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(RunTests, KutuzovIRunPerfTests, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(RunTests, KutuzovITorusGridPerfTests, kGtestValues, kPerfTestName);
 
 }  // namespace kutuzov_i_torus_grid

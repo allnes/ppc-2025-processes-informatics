@@ -74,7 +74,7 @@ INSTANTIATE_TEST_SUITE_P(AllReduceTests, NikitinaVRunFuncTests, kGtestValues, Ni
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables, modernize-type-traits, misc-use-anonymous-namespace)
 
 void RunCheck(const std::shared_ptr<BaseTask> &task, ppc::task::TypeOfTask type) {
-  ASSERT_EQ(task->GetStaticTypeOfTask(), type);
+  ASSERT_EQ(task->GetDynamicTypeOfTask(), type);
   ASSERT_TRUE(task->Validation());
   task->PreProcessing();
   task->Run();
