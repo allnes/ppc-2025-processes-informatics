@@ -17,7 +17,7 @@
 
 namespace kutuzov_i_simpson_integration {
 
-class KutuzovISimpsonIntegrationMPIFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class KutuzovSimpsonTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
     int n = get<0>(test_param);
@@ -92,7 +92,7 @@ class KutuzovISimpsonIntegrationMPIFuncTests : public ppc::util::BaseRunFuncTest
 
 namespace {
 
-TEST_P(KutuzovISimpsonIntegrationMPIFuncTests, SimpsonIntegration) {
+TEST_P(KutuzovSimpsonTests, SimpsonIntegration) {
   ExecuteTest(GetParam());
 }
 
@@ -125,10 +125,9 @@ const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<KutuzovISimpso
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kPerfTestName =
-    KutuzovISimpsonIntegrationMPIFuncTests::PrintFuncTestName<KutuzovISimpsonIntegrationMPIFuncTests>;
+const auto kPerfTestName = KutuzovSimpsonTests::PrintFuncTestName<KutuzovSimpsonTests>;
 
-INSTANTIATE_TEST_SUITE_P(PicMatrixTests, KutuzovISimpsonIntegrationMPIFuncTests, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(Simpson, KutuzovSimpsonTests, kGtestValues, kPerfTestName);
 
 }  // namespace
 

@@ -17,7 +17,7 @@
 
 namespace kutergin_v_reduce {
 
-TEST(KuterginReduceValidation, SeqHandlesEmptyVector) {
+TEST(KuterginReduce, SeqEmpty) {
   InType empty_input{{}, 0};
   ReduceSequential task_empty(empty_input);
   ASSERT_TRUE(task_empty.Validation());
@@ -25,11 +25,11 @@ TEST(KuterginReduceValidation, SeqHandlesEmptyVector) {
   ASSERT_EQ(task_empty.GetOutput(), 0);
 }
 
-class ReduceFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class ReduceTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param)  // вывод имен тестов
   {
-    return "vec_size_" + std::to_string(std::get<0>(test_param)) + "_root_" + std::to_string(std::get<1>(test_param));
+    return "sz_" + std::to_string(std::get<0>(test_param)) + "_r_" + std::to_string(std::get<1>(test_param));
   }
 
  protected:
@@ -117,13 +117,13 @@ class ReduceFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, Test
 
 namespace {
 
-TEST_P(ReduceFuncTests, ReduceTest) {
+TEST_P(ReduceTests, ReduceTest) {
   ExecuteTest(GetParam());
 }
 
 const std::array<TestType, 4> kTestCases = {
-    std::make_tuple(10, 0, "size_10_root_0"), std::make_tuple(20, 1, "size_20_root_1"),
-    std::make_tuple(1, 3, "size_1_root_3"), std::make_tuple(100, 2, "size_100_root_2")};
+    std::make_tuple(10, 0, "sz_10_r_0"), std::make_tuple(20, 1, "sz_20_r_1"),
+    std::make_tuple(1, 3, "sz_1_r_3"), std::make_tuple(100, 2, "sz_100_r_2")};
 
 const auto kTestTasksList =
     std::tuple_cat(ppc::util::AddFuncTask<ReduceSequential, InType>(kTestCases, PPC_SETTINGS_kutergin_v_reduce),
@@ -131,10 +131,10 @@ const auto kTestTasksList =
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kTestName = ReduceFuncTests::PrintFuncTestName<ReduceFuncTests>;
+const auto kTestName = ReduceTests::PrintFuncTestName<ReduceTests>;
 
 // NOLINTNEXTLINE(modernize-type-traits, cppcoreguidelines-avoid-non-const-global-variables)
-INSTANTIATE_TEST_SUITE_P(Reduce, ReduceFuncTests, kGtestValues, kTestName);
+INSTANTIATE_TEST_SUITE_P(Reduce, ReduceTests, kGtestValues, kTestName);
 }  // namespace
 
 }  // namespace kutergin_v_reduce
