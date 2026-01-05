@@ -18,7 +18,7 @@
 
 namespace nikitina_v_trans_all_one_distrib {
 
-class NikitinaVRunFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class NikitinaAllReduceTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(
       const testing::TestParamInfo<ppc::util::FuncTestParam<InType, OutType, TestType>> &param_info) {
@@ -55,7 +55,7 @@ class NikitinaVRunFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType
   InType input_data_;
 };
 
-TEST_P(NikitinaVRunFuncTests, AllReduceSum) {
+TEST_P(NikitinaAllReduceTests, AllReduceSum) {
   ExecuteTest(GetParam());
 }
 
@@ -70,7 +70,7 @@ const auto kTestTasksList = std::tuple_cat(
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
 // NOLINTBEGIN(cppcoreguidelines-avoid-non-const-global-variables, modernize-type-traits, misc-use-anonymous-namespace)
-INSTANTIATE_TEST_SUITE_P(AllReduceTests, NikitinaVRunFuncTests, kGtestValues, NikitinaVRunFuncTests::PrintTestParam);
+INSTANTIATE_TEST_SUITE_P(AllReduce, NikitinaAllReduceTests, kGtestValues, NikitinaAllReduceTests::PrintTestParam);
 // NOLINTEND(cppcoreguidelines-avoid-non-const-global-variables, modernize-type-traits, misc-use-anonymous-namespace)
 
 void RunCheck(const std::shared_ptr<BaseTask> &task, ppc::task::TypeOfTask type) {

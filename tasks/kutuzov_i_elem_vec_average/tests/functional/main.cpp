@@ -16,7 +16,7 @@
 
 namespace kutuzov_i_elem_vec_average {
 
-class KutuzovIElemVecAverageFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class KutuzovAverageTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
     return std::to_string(test_param);
@@ -54,7 +54,7 @@ class KutuzovIElemVecAverageFuncTests : public ppc::util::BaseRunFuncTests<InTyp
 
 namespace {
 
-TEST_P(KutuzovIElemVecAverageFuncTests, MatmulFromPic) {
+TEST_P(KutuzovAverageTests, AverageTest) {
   ExecuteTest(GetParam());
 }
 
@@ -66,9 +66,9 @@ const auto kTestTasksList = std::tuple_cat(
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kPerfTestName = KutuzovIElemVecAverageFuncTests::PrintFuncTestName<KutuzovIElemVecAverageFuncTests>;
+const auto kPerfTestName = KutuzovAverageTests::PrintFuncTestName<KutuzovAverageTests>;
 
-INSTANTIATE_TEST_SUITE_P(PicMatrixTests, KutuzovIElemVecAverageFuncTests, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(Average, KutuzovAverageTests, kGtestValues, kPerfTestName);
 
 }  // namespace
 

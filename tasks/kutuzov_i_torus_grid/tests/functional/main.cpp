@@ -16,7 +16,7 @@
 
 namespace kutuzov_i_torus_grid {
 
-class KutuzovITorusGridMPIFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class KutuzovTorusTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
     std::string test_name = test_param;
@@ -175,7 +175,7 @@ class KutuzovITorusGridMPIFuncTests : public ppc::util::BaseRunFuncTests<InType,
 
 namespace {
 
-TEST_P(KutuzovITorusGridMPIFuncTests, ThorusGrid) {
+TEST_P(KutuzovTorusTests, ThorusGrid) {
   ExecuteTest(GetParam());
 }
 
@@ -188,9 +188,9 @@ const auto kTestTasksList = std::tuple_cat(
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kPerfTestName = KutuzovITorusGridMPIFuncTests::PrintFuncTestName<KutuzovITorusGridMPIFuncTests>;
+const auto kPerfTestName = KutuzovTorusTests::PrintFuncTestName<KutuzovTorusTests>;
 
-INSTANTIATE_TEST_SUITE_P(ThorusGridTests, KutuzovITorusGridMPIFuncTests, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(TorusGrid, KutuzovTorusTests, kGtestValues, kPerfTestName);
 
 }  // namespace
 

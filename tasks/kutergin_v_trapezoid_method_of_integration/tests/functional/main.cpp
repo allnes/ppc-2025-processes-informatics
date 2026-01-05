@@ -67,7 +67,7 @@ TEST(KuterginTrapezoidValidation, MPIFailsOnNegativeSteps) {
   task.PostProcessing();
 }
 
-class KuterginVRunFuncTestsSEQ
+class KuterginTrapezoidTests
     : public ppc::util::BaseRunFuncTests<InType, OutType,
                                          TestType>  // наследник ppc::util::BaseRunFuncTests<InType, OutType, TestType>
 {
@@ -114,7 +114,7 @@ class KuterginVRunFuncTestsSEQ
 namespace  // анонимное пространство имен
 {
 
-TEST_P(KuterginVRunFuncTestsSEQ, TrapezoidTest)  // параметризованный тест
+TEST_P(KuterginTrapezoidTests, TrapezoidTest)  // параметризованный тест
 {
   ExecuteTest(GetParam());
 }
@@ -145,11 +145,11 @@ const auto kTestTasksList =
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kTestName = KuterginVRunFuncTestsSEQ::PrintFuncTestName<KuterginVRunFuncTestsSEQ>;
+const auto kTestName = KuterginTrapezoidTests::PrintFuncTestName<KuterginTrapezoidTests>;
 
 // "регистрация" набора тестов и параметров в GTest
 // NOLINTNEXTLINE(modernize-type-traits, cppcoreguidelines-avoid-non-const-global-variables)
-INSTANTIATE_TEST_SUITE_P(TrapezoidIntegrationSEQ, KuterginVRunFuncTestsSEQ, kGtestValues, kTestName);
+INSTANTIATE_TEST_SUITE_P(TrapezoidSeq, KuterginTrapezoidTests, kGtestValues, kTestName);
 }  // namespace
 
 }  // namespace kutergin_v_trapezoid_seq

@@ -18,7 +18,7 @@ namespace nikitina_v_max_elem_matr {
 
 using TestType = std::tuple<int, int, int>;
 
-class NikitinaVMaxElemMatrFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class NikitinaMaxElemTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const testing::TestParamInfo<ParamType> &info) {
     auto task_name = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kNameTest)>(info.param);
@@ -102,7 +102,7 @@ class NikitinaVMaxElemMatrFuncTests : public ppc::util::BaseRunFuncTests<InType,
 
 namespace {
 
-TEST_P(NikitinaVMaxElemMatrFuncTests, FindMaxElement) {
+TEST_P(NikitinaMaxElemTests, FindMaxElement) {
   ExecuteTest(GetParam());
 }
 
@@ -116,8 +116,8 @@ const auto kTestTasksList = std::tuple_cat(
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-INSTANTIATE_TEST_SUITE_P(NikitinaV_MaxElementMatr_Func, NikitinaVMaxElemMatrFuncTests, kGtestValues,
-                         NikitinaVMaxElemMatrFuncTests::PrintTestParam);
+INSTANTIATE_TEST_SUITE_P(NikitinaMaxElem, NikitinaMaxElemTests, kGtestValues,
+                         NikitinaMaxElemTests::PrintTestParam);
 
 }  // namespace
 
