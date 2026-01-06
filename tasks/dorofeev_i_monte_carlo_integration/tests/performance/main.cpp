@@ -47,7 +47,7 @@ TEST_P(MonteCarloPerfTests, PerfTestModes) {
 // making performance probs: MPI + SEQ
 const auto kPerfTasks =
     ppc::util::MakeAllPerfTasks<InType, DorofeevIMonteCarloIntegrationMPI, DorofeevIMonteCarloIntegrationSEQ>(
-        PPC_SETTINGS_example_processes);
+        PPC_SETTINGS_dorofeev_i_monte_carlo_integration);
 
 // converting to GTest values
 const auto kGTestValues = ppc::util::TupleToGTestValues(kPerfTasks);

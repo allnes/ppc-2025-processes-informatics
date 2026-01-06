@@ -111,7 +111,7 @@ TEST_P(ChaschinVRunPerfTestProcessesSO, RunPerfModes) {
 }
 
 const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, ChaschinVSobelOperatorMPI, ChaschinVSobelOperatorSEQ>(
-    PPC_SETTINGS_example_processes);
+    PPC_SETTINGS_chaschin_v_sobel_operator);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 

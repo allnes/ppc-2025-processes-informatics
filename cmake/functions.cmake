@@ -61,40 +61,6 @@ function(setup_implementation)
   endforeach()
 endfunction()
 
-# Function to setup implementation for batch builds
-function(setup_implementation_for_batch)
-  cmake_parse_arguments(SETUP "" "NAME;PROJ_NAME;BATCH_LIB;BASE_DIR" "" ${ARGN})
-
-  set(IMP_DIR "${SETUP_BASE_DIR}/${SETUP_NAME}")
-  if(NOT EXISTS "${IMP_DIR}")
-    return()
-  endif()
-  message(STATUS "    -- ${SETUP_NAME}")
-
-  # collect sources
-  file(GLOB_RECURSE CPP_SOURCES "${IMP_DIR}/src/*.cpp")
-  file(GLOB_RECURSE ALL_SOURCES "${IMP_DIR}/include/*.h"
-       "${IMP_DIR}/include/*.hpp" "${IMP_DIR}/src/*.cpp")
-
-  # add sources to batch library
-  if(CPP_SOURCES OR ALL_SOURCES)
-    target_sources(${SETUP_BATCH_LIB} PRIVATE ${CPP_SOURCES})
-    target_include_directories(${SETUP_BATCH_LIB} PUBLIC "${IMP_DIR}/include")
-  endif()
-
-  # link core module to batch
-  target_link_libraries(${SETUP_BATCH_LIB} PUBLIC core_module_lib)
-
-  # Add test sources to batch library
-  set(TEST_DIR "${SETUP_BASE_DIR}/tests")
-  if(EXISTS "${TEST_DIR}")
-    file(GLOB_RECURSE TEST_SOURCES "${TEST_DIR}/*.cpp")
-    if(TEST_SOURCES)
-      target_sources(${SETUP_BATCH_LIB} PRIVATE ${TEST_SOURCES})
-    endif()
-  endif()
-endfunction()
-
 # Function to configure each subproject
 function(ppc_configure_subproject SUBDIR)
   # Module-specific compile-time definitions
@@ -130,58 +96,92 @@ function(ppc_configure_subproject SUBDIR)
   endforeach()
 endfunction()
 
-# Function to configure subprojects in batches for Windows
-function(ppc_configure_subproject_batch BATCH_NAME SUBDIRS)
-  # Create a batch library
-  set(BATCH_LIB_NAME "ppc_batch_${BATCH_NAME}")
-  add_library(${BATCH_LIB_NAME} STATIC)
+# Function to configure single subproject as static library
+function(ppc_configure_single_subproject SUBDIR)
+  if(NOT IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}"
+     OR SUBDIR STREQUAL "common")
+    return()
+  endif()
 
-  # Set batch-specific definitions
-  foreach(SUBDIR ${SUBDIRS})
-    target_compile_definitions(
-      ${BATCH_LIB_NAME}
-      PRIVATE
-        PPC_SETTINGS_${SUBDIR}="${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/settings.json"
-        PPC_ID_${SUBDIR}="${SUBDIR}")
-  endforeach()
+  message(STATUS "  ${SUBDIR}")
 
-  # Configure each subproject in the batch
-  foreach(SUBDIR ${SUBDIRS})
-    if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}"
-       AND NOT SUBDIR STREQUAL "common")
-      # Switch project context to the subproject
-      project(${SUBDIR})
+  # Create individual library for this task
+  set(TASK_LIB_NAME "ppc_task_${SUBDIR}")
+  set(TASK_HAS_SOURCES FALSE)
+  set(ALL_TASK_SOURCES)
+  set(ALL_TASK_INCLUDE_DIRS)
 
-      # Directory with tests and list of test executables
-      set(TEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/tests")
-      set(TEST_EXECUTABLES "")
+  # Module-specific compile-time definitions
+  add_compile_definitions(
+    PPC_SETTINGS_${SUBDIR}="${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/settings.json"
+    PPC_ID_${SUBDIR}="${SUBDIR}")
 
-      # Register functional and performance test runners
-      add_tests(USE_FUNC_TESTS ${FUNC_TEST_EXEC} functional)
-      add_tests(USE_PERF_TESTS ${PERF_TEST_EXEC} performance)
+  # Switch project context to the subproject
+  project(${SUBDIR})
 
-      message(STATUS "  Batch ${BATCH_NAME}: ${SUBDIR}")
+  # Register functional and performance test runners
+  set(TEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/tests")
+  set(TEST_EXECUTABLES "")
+  add_tests(USE_FUNC_TESTS ${FUNC_TEST_EXEC} functional)
+  add_tests(USE_PERF_TESTS ${PERF_TEST_EXEC} performance)
 
-      # List of implementations to configure
-      foreach(IMPL IN LISTS PPC_IMPLEMENTATIONS)
-        setup_implementation_for_batch(
-          NAME
-          ${IMPL}
-          PROJ_NAME
-          ${SUBDIR}
-          BATCH_LIB
-          ${BATCH_LIB_NAME}
-          BASE_DIR
-          "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}")
-      endforeach()
+  # Collect test sources
+  if(EXISTS "${TEST_DIR}/functional")
+    file(GLOB_RECURSE FUNC_TEST_SOURCES "${TEST_DIR}/functional/*.cpp")
+    if(FUNC_TEST_SOURCES)
+      list(APPEND ALL_TASK_SOURCES ${FUNC_TEST_SOURCES})
+      set(TASK_HAS_SOURCES TRUE)
+    endif()
+  endif()
+
+  if(EXISTS "${TEST_DIR}/performance")
+    file(GLOB_RECURSE PERF_TEST_SOURCES "${TEST_DIR}/performance/*.cpp")
+    if(PERF_TEST_SOURCES)
+      list(APPEND ALL_TASK_SOURCES ${PERF_TEST_SOURCES})
+      set(TASK_HAS_SOURCES TRUE)
+    endif()
+  endif()
+
+  # Collect implementation sources
+  foreach(IMPL IN LISTS PPC_IMPLEMENTATIONS)
+    set(IMP_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/${IMPL}")
+    if(EXISTS "${IMP_DIR}")
+      file(GLOB_RECURSE IMPL_SOURCES "${IMP_DIR}/src/*.cpp")
+      if(IMPL_SOURCES)
+        list(APPEND ALL_TASK_SOURCES ${IMPL_SOURCES})
+        list(APPEND ALL_TASK_INCLUDE_DIRS "${IMP_DIR}/include")
+        set(TASK_HAS_SOURCES TRUE)
+      endif()
     endif()
   endforeach()
 
-  # Link batch library to main executables
-  if(USE_FUNC_TESTS)
-    target_link_libraries(${FUNC_TEST_EXEC} PUBLIC ${BATCH_LIB_NAME})
-  endif()
-  if(USE_PERF_TESTS)
-    target_link_libraries(${PERF_TEST_EXEC} PUBLIC ${BATCH_LIB_NAME})
+  # Create library only if we have sources
+  if(TASK_HAS_SOURCES)
+    add_library(${TASK_LIB_NAME} STATIC ${ALL_TASK_SOURCES})
+
+    # Set include directories
+    if(ALL_TASK_INCLUDE_DIRS)
+      list(REMOVE_DUPLICATES ALL_TASK_INCLUDE_DIRS)
+      target_include_directories(${TASK_LIB_NAME}
+                                 PUBLIC ${ALL_TASK_INCLUDE_DIRS})
+    endif()
+
+    # Set task-specific definitions
+    target_compile_definitions(
+      ${TASK_LIB_NAME}
+      PRIVATE
+        PPC_SETTINGS_${SUBDIR}="${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/settings.json"
+        PPC_ID_${SUBDIR}="${SUBDIR}")
+
+    # Link core module
+    target_link_libraries(${TASK_LIB_NAME} PUBLIC core_module_lib)
+
+    # Link to main executables
+    if(USE_FUNC_TESTS)
+      target_link_libraries(${FUNC_TEST_EXEC} PUBLIC ${TASK_LIB_NAME})
+    endif()
+    if(USE_PERF_TESTS)
+      target_link_libraries(${PERF_TEST_EXEC} PUBLIC ${TASK_LIB_NAME})
+    endif()
   endif()
 endfunction()

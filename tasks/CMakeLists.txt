@@ -29,37 +29,10 @@ foreach(sub IN LISTS subdirs)
   endif()
 endforeach()
 
-# For Windows: use batched build to avoid command line length limits
-if(WIN32)
-  message(STATUS "Using batched build for Windows (${CMAKE_CXX_COMPILER_ID})")
-  
-  # Split tasks into batches of 30
-  set(BATCH_SIZE 30)
-  set(batch_num 0)
-  set(current_batch)
-  set(task_count 0)
-  
-  foreach(task_dir ${task_dirs})
-    list(APPEND current_batch ${task_dir})
-    math(EXPR task_count "${task_count} + 1")
-    
-    # When batch is full, process it
-    if(task_count EQUAL BATCH_SIZE)
-      ppc_configure_subproject_batch(${batch_num} "${current_batch}")
-      math(EXPR batch_num "${batch_num} + 1")
-      set(current_batch)
-      set(task_count 0)
-    endif()
-  endforeach()
-  
-  # Process remaining tasks in the last batch
-  if(current_batch)
-    ppc_configure_subproject_batch(${batch_num} "${current_batch}")
-  endif()
-  
-else()
-  # Normal build for non-Windows or non-MSVC
-  foreach(sub IN LISTS task_dirs)
-    ppc_configure_subproject(${sub})
-  endforeach()
-endif()
+# Use single-task libraries for all platforms
+message(STATUS "Using single-task library system (${CMAKE_CXX_COMPILER_ID})")
+
+# Configure each task as separate library
+foreach(sub IN LISTS task_dirs)
+  ppc_configure_single_subproject(${sub})
+endforeach()

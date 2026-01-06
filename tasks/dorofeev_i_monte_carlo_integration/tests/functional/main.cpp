@@ -59,9 +59,10 @@ const std::array<TestType, 3> kParams = {
     std::make_tuple(20000, "large"),
 };
 
-const auto kTaskList = std::tuple_cat(
-    ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationSEQ, InType>(kParams, PPC_SETTINGS_example_processes),
-    ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationMPI, InType>(kParams, PPC_SETTINGS_example_processes));
+const auto kTaskList = std::tuple_cat(ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationSEQ, InType>(
+                                          kParams, PPC_SETTINGS_dorofeev_i_monte_carlo_integration),
+                                      ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationMPI, InType>(
+                                          kParams, PPC_SETTINGS_dorofeev_i_monte_carlo_integration));
 
 INSTANTIATE_TEST_SUITE_P(IntegrationTests, MonteCarloFuncTests, ppc::util::ExpandToValues(kTaskList),
                          MonteCarloFuncTests::PrintTestParam);
@@ -164,9 +165,10 @@ const std::array<TestType, 5> kExtraParams = {
     std::make_tuple(3, "large_samples"), std::make_tuple(4, "negative_interval"),
 };
 
-const auto kExtraTaskList = std::tuple_cat(
-    ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationSEQ, InType>(kExtraParams, PPC_SETTINGS_example_processes),
-    ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationMPI, InType>(kExtraParams, PPC_SETTINGS_example_processes));
+const auto kExtraTaskList = std::tuple_cat(ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationSEQ, InType>(
+                                               kExtraParams, PPC_SETTINGS_dorofeev_i_monte_carlo_integration),
+                                           ppc::util::AddFuncTask<DorofeevIMonteCarloIntegrationMPI, InType>(
+                                               kExtraParams, PPC_SETTINGS_dorofeev_i_monte_carlo_integration));
 
 INSTANTIATE_TEST_SUITE_P(ExtraIntegrationTests, MonteCarloExtraFuncTests, ppc::util::ExpandToValues(kExtraTaskList),
                          MonteCarloExtraFuncTests::PrintName);
