@@ -61,6 +61,40 @@ function(setup_implementation)
   endforeach()
 endfunction()
 
+# Function to setup implementation for batch builds
+function(setup_implementation_for_batch)
+  cmake_parse_arguments(SETUP "" "NAME;PROJ_NAME;BATCH_LIB;BASE_DIR" "" ${ARGN})
+
+  set(IMP_DIR "${SETUP_BASE_DIR}/${SETUP_NAME}")
+  if(NOT EXISTS "${IMP_DIR}")
+    return()
+  endif()
+  message(STATUS "    -- ${SETUP_NAME}")
+
+  # collect sources
+  file(GLOB_RECURSE CPP_SOURCES "${IMP_DIR}/src/*.cpp")
+  file(GLOB_RECURSE ALL_SOURCES "${IMP_DIR}/include/*.h"
+       "${IMP_DIR}/include/*.hpp" "${IMP_DIR}/src/*.cpp")
+
+  # add sources to batch library
+  if(CPP_SOURCES OR ALL_SOURCES)
+    target_sources(${SETUP_BATCH_LIB} PRIVATE ${CPP_SOURCES})
+    target_include_directories(${SETUP_BATCH_LIB} PUBLIC "${IMP_DIR}/include")
+  endif()
+
+  # link core module to batch
+  target_link_libraries(${SETUP_BATCH_LIB} PUBLIC core_module_lib)
+
+  # Add test sources to batch library
+  set(TEST_DIR "${SETUP_BASE_DIR}/tests")
+  if(EXISTS "${TEST_DIR}")
+    file(GLOB_RECURSE TEST_SOURCES "${TEST_DIR}/*.cpp")
+    if(TEST_SOURCES)
+      target_sources(${SETUP_BATCH_LIB} PRIVATE ${TEST_SOURCES})
+    endif()
+  endif()
+endfunction()
+
 # Function to configure each subproject
 function(ppc_configure_subproject SUBDIR)
   # Module-specific compile-time definitions
@@ -94,4 +128,55 @@ function(ppc_configure_subproject SUBDIR)
       BASE_DIR
       "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}")
   endforeach()
+endfunction()
+
+# Function to configure subprojects in batches for Windows
+function(ppc_configure_subproject_batch BATCH_NAME SUBDIRS)
+  # Create a batch library
+  set(BATCH_LIB_NAME "ppc_batch_${BATCH_NAME}")
+  add_library(${BATCH_LIB_NAME} STATIC)
+
+  # Set batch-specific definitions
+  foreach(SUBDIR ${SUBDIRS})
+    target_compile_definitions(
+      ${BATCH_LIB_NAME}
+      PRIVATE
+        PPC_SETTINGS_${SUBDIR}="${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/settings.json"
+        PPC_ID_${SUBDIR}="${SUBDIR}")
+  endforeach()
+
+  # Configure each subproject in the batch
+  foreach(SUBDIR ${SUBDIRS})
+    if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}"
+       AND NOT SUBDIR STREQUAL "common")
+      # Switch project context to the subproject
+      project(${SUBDIR})
+
+      # Directory with tests
+      set(TEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/tests")
+
+      message(STATUS "  Batch ${BATCH_NAME}: ${SUBDIR}")
+
+      # List of implementations to configure
+      foreach(IMPL IN LISTS PPC_IMPLEMENTATIONS)
+        setup_implementation_for_batch(
+          NAME
+          ${IMPL}
+          PROJ_NAME
+          ${SUBDIR}
+          BATCH_LIB
+          ${BATCH_LIB_NAME}
+          BASE_DIR
+          "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}")
+      endforeach()
+    endif()
+  endforeach()
+
+  # Link batch library to main executables
+  if(USE_FUNC_TESTS)
+    target_link_libraries(${FUNC_TEST_EXEC} PUBLIC ${BATCH_LIB_NAME})
+  endif()
+  if(USE_PERF_TESTS)
+    target_link_libraries(${PERF_TEST_EXEC} PUBLIC ${BATCH_LIB_NAME})
+  endif()
 endfunction()
