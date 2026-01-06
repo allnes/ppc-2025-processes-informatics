@@ -30,8 +30,8 @@ foreach(sub IN LISTS subdirs)
 endforeach()
 
 # For Windows: use batched build to avoid command line length limits
-if(WIN32 AND CMAKE_CXX_COMPILER_ID MATCHES "MSVC|Intel")
-  message(STATUS "Using batched build for Windows MSVC")
+if(WIN32)
+  message(STATUS "Using batched build for Windows (${CMAKE_CXX_COMPILER_ID})")
   
   # Split tasks into batches of 30
   set(BATCH_SIZE 30)

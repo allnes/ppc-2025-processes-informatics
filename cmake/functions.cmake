@@ -152,8 +152,13 @@ function(ppc_configure_subproject_batch BATCH_NAME SUBDIRS)
       # Switch project context to the subproject
       project(${SUBDIR})
 
-      # Directory with tests
+      # Directory with tests and list of test executables
       set(TEST_DIR "${CMAKE_CURRENT_SOURCE_DIR}/${SUBDIR}/tests")
+      set(TEST_EXECUTABLES "")
+
+      # Register functional and performance test runners
+      add_tests(USE_FUNC_TESTS ${FUNC_TEST_EXEC} functional)
+      add_tests(USE_PERF_TESTS ${PERF_TEST_EXEC} performance)
 
       message(STATUS "  Batch ${BATCH_NAME}: ${SUBDIR}")
 
