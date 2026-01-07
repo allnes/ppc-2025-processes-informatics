@@ -322,13 +322,46 @@ def _find_performance_max(points_info, task_type: str) -> int:
     return 0
 
 
-def _calc_perf_points_from_efficiency(efficiency_str: str, max_points: int) -> float:
+def _get_perf_category(points_info, task_number: int, variant: int) -> str:
+    """Determine performance category (A, B, or C) for a given task and variant.
+
+    Categories determine which efficiency scale to use:
+      A: easily scalable tasks (>=50% = 100%)
+      B: moderately scalable tasks (>=40% = 100%)
+      C: communication-bound/sequential tasks (>=30% = 100%)
+    """
+    proc_tasks = (points_info.get("processes", {}) or {}).get("tasks", [])
+    key = f"mpi_task_{task_number}"
+    for t in proc_tasks:
+        if str(t.get("name")) == key:
+            # Check if task has a single category for all variants
+            if "perf_category" in t:
+                return str(t.get("perf_category", "A"))
+            # Check if task has per-variant categories
+            by_variant = t.get("perf_category_by_variant", {})
+            if by_variant:
+                # Check each category list
+                for cat in ["A", "B", "C"]:
+                    variants_in_cat = by_variant.get(cat, [])
+                    if variant in variants_in_cat:
+                        return cat
+                # Return default if not found in any list
+                return str(by_variant.get("default", "A"))
+    return "A"  # Default to category A
+
+
+def _calc_perf_points_from_efficiency(
+    efficiency_str: str, max_points: int, category: str = "A", scales: dict = None
+) -> float:
     """Calculate Performance points as a real number (x.yy).
 
-    Mapping (eff -> percent of max):
-      >=50 -> 100; [45,50) -> 90; [42,45) -> 80; [40,42) -> 70; [37,40) -> 60;
-      [35,37) -> 50; [32,35) -> 40; [30,32) -> 30; [27,30) -> 20; [25,27) -> 10; <25 -> 0
-    Returns a float rounded to 2 decimals (no ceil).
+    Uses category-specific scales from points-info.yml:
+      A: easily scalable (>=50% = 100%)
+      B: moderately scalable (>=40% = 100%)
+      C: communication-bound (>=30% = 100%)
+
+    Falls back to default scale A if scales not provided.
+    Returns a float rounded to 2 decimals.
     """
     if not isinstance(efficiency_str, str) or not efficiency_str.endswith("%"):
         return 0.0
@@ -336,29 +369,41 @@ def _calc_perf_points_from_efficiency(efficiency_str: str, max_points: int) -> f
         val = float(efficiency_str.rstrip("%"))
     except Exception:
         return 0.0
-    perc = 0.0
-    if val >= 50:
-        perc = 1.0
-    elif 45 <= val < 50:
-        perc = 0.9
-    elif 42 <= val < 45:
-        perc = 0.8
-    elif 40 <= val < 42:
-        perc = 0.7
-    elif 37 <= val < 40:
-        perc = 0.6
-    elif 35 <= val < 37:
-        perc = 0.5
-    elif 32 <= val < 35:
-        perc = 0.4
-    elif 30 <= val < 32:
-        perc = 0.3
-    elif 27 <= val < 30:
-        perc = 0.2
-    elif 25 <= val < 27:
-        perc = 0.1
-    else:
+
+    # Get scale for category (list of [threshold, percentage] pairs, sorted descending)
+    if scales and category in scales:
+        scale = scales[category]
         perc = 0.0
+        for threshold, points_pct in scale:
+            if val >= threshold:
+                perc = points_pct / 100.0
+                break
+    else:
+        # Fallback to default category A scale
+        perc = 0.0
+        if val >= 50:
+            perc = 1.0
+        elif 45 <= val < 50:
+            perc = 0.9
+        elif 42 <= val < 45:
+            perc = 0.8
+        elif 40 <= val < 42:
+            perc = 0.7
+        elif 37 <= val < 40:
+            perc = 0.6
+        elif 35 <= val < 37:
+            perc = 0.5
+        elif 32 <= val < 35:
+            perc = 0.4
+        elif 30 <= val < 32:
+            perc = 0.3
+        elif 27 <= val < 30:
+            perc = 0.2
+        elif 25 <= val < 27:
+            perc = 0.1
+        else:
+            perc = 0.0
+
     pts = max_points * perc if max_points > 0 else 0.0
     # round to 2 decimals (banker's rounding acceptable here)
     return round(pts, 2)
@@ -950,14 +995,15 @@ def main():
         target = _match_dir(key)
         if target:
             targets.add(target)
-        # 2) If key encodes processes_N, spread to all dirs with that task_number
-        m_num = _re.search(r"processes_(\d+)", key)
-        if m_num:
-            try:
-                num = int(m_num.group(1))
-                targets.update(process_tasknum_map.get(num, []))
-            except Exception:
-                pass
+        # 2) If key is for example_processes_N, map to that specific example directory only
+        # (Do NOT spread to all dirs with that task_number - that was causing data duplication)
+        if "test_task_processes" in key or "example_processes" in key:
+            m_num = _re.search(r"processes_(\d+)", key)
+            if m_num:
+                suffix = m_num.group(1)
+                example_dir = f"example_processes_{suffix}"
+                if example_dir in directories:
+                    targets.add(example_dir)
         # 3) Fallback: if nothing matched and "threads" in key, apply to example_threads only
         if not targets and "threads" in key:
             if "example_threads" in directories:
@@ -1109,9 +1155,30 @@ def main():
                     has_seq = status_seq in ("done", "disabled")
                     report_present = (tasks_dir / d / "report.md").exists()
 
+                    # Get student's variant for this task to determine perf category
+                    vmax = _find_process_variants_max(cfg, n)
+                    try:
+                        variant_idx = assign_variant(
+                            surname=str(student.get("last_name", "")),
+                            name=str(student.get("first_name", "")),
+                            patronymic=str(student.get("middle_name", "")),
+                            group=str(student.get("group_number", "")),
+                            repo=f"{REPO_SALT}/processes/task-{n}",
+                            num_variants=vmax,
+                        )
+                        variant = variant_idx + 1  # 1-based
+                    except Exception:
+                        variant = 1
+
+                    # Get performance category and scales
+                    perf_category = _get_perf_category(cfg, n, variant)
+                    perf_scales = (cfg.get("efficiency", {}) or {}).get("scales", {})
+
                     mpi_eff = group_cells[0].get("efficiency", "N/A")
                     perf_points_mpi = (
-                        _calc_perf_points_from_efficiency(mpi_eff, a_mpi)
+                        _calc_perf_points_from_efficiency(
+                            mpi_eff, a_mpi, category=perf_category, scales=perf_scales
+                        )
                         if (status_mpi == "done" and status_seq == "done")
                         else 0
                     )
