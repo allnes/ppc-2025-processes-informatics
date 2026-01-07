@@ -80,8 +80,8 @@ const std::array<TestType, 20> kTestParam = {
     std::make_tuple(5, "31"), std::make_tuple(7, "33"), std::make_tuple(1, "35"), std::make_tuple(0, "37")};
 
 const auto kTestTasksList = std::tuple_cat(
-    ppc::util::AddFuncTask<ChaschinVMaxForEachRow, InType>(kTestParam, PPC_SETTINGS_example_processes),
-    ppc::util::AddFuncTask<ChaschinVMaxForEachRowSEQ, InType>(kTestParam, PPC_SETTINGS_example_processes));
+    ppc::util::AddFuncTask<ChaschinVMaxForEachRow, InType>(kTestParam, PPC_SETTINGS_chaschin_v_max_for_each_row),
+    ppc::util::AddFuncTask<ChaschinVMaxForEachRowSEQ, InType>(kTestParam, PPC_SETTINGS_chaschin_v_max_for_each_row));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 

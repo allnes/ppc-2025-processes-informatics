@@ -115,8 +115,8 @@ const std::array<TestType, 6> kTestParam = {
                     std::vector<std::vector<int>>{{1900, 2200}, {4300, 5000}})};
 
 const auto kTestTasksList =
-    std::tuple_cat(ppc::util::AddFuncTask<LeonovaAStarMPI, InType>(kTestParam, PPC_SETTINGS_example_processes_2),
-                   ppc::util::AddFuncTask<LeonovaAStarSEQ, InType>(kTestParam, PPC_SETTINGS_example_processes_2));
+    std::tuple_cat(ppc::util::AddFuncTask<LeonovaAStarMPI, InType>(kTestParam, PPC_SETTINGS_leonova_a_star),
+                   ppc::util::AddFuncTask<LeonovaAStarSEQ, InType>(kTestParam, PPC_SETTINGS_leonova_a_star));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 

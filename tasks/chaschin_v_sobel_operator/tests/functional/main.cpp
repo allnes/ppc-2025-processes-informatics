@@ -121,8 +121,8 @@ const std::array<TestType, 19> kTestParam = {
     std::make_tuple(33, "33"), std::make_tuple(35, "35"), std::make_tuple(37, "37")};
 
 const auto kTestTasksList = std::tuple_cat(
-    ppc::util::AddFuncTask<ChaschinVSobelOperatorMPI, InType>(kTestParam, PPC_SETTINGS_example_processes),
-    ppc::util::AddFuncTask<ChaschinVSobelOperatorSEQ, InType>(kTestParam, PPC_SETTINGS_example_processes));
+    ppc::util::AddFuncTask<ChaschinVSobelOperatorMPI, InType>(kTestParam, PPC_SETTINGS_chaschin_v_sobel_operator),
+    ppc::util::AddFuncTask<ChaschinVSobelOperatorSEQ, InType>(kTestParam, PPC_SETTINGS_chaschin_v_sobel_operator));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 

@@ -51,7 +51,7 @@ TEST_P(ChaschinVRunPerfTestProcesses, RunPerfModes) {
 }
 
 const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, ChaschinVMaxForEachRow, ChaschinVMaxForEachRowSEQ>(
-    PPC_SETTINGS_example_processes);
+    PPC_SETTINGS_chaschin_v_max_for_each_row);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
