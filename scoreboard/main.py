@@ -1113,9 +1113,14 @@ def main():
     def _build_process_rows(processes_dirs: list[str]):
         """Build rows for all unique students found in processes dirs."""
         identity_map: dict[str, dict] = {}
+        duplicates: list[str] = []
+        invalid_task_numbers: list[str] = []
+        processed_dirs: set[str] = set()
+
         for d in processes_dirs:
             s = _load_student_info(d)
             if not s:
+                logger.warning(f"No student info found for directory: {d}")
                 continue
             key = _identity_key(s)
             entry = identity_map.setdefault(key, {"student": s, "dir_map": {}})
@@ -1123,10 +1128,55 @@ def main():
                 tn = int(str(s.get("task_number", "0")))
             except Exception:
                 tn = 0
-            # If task_number is outside expected range (1..3), map to fallback (task-1)
+
+            # Validate task_number is in expected range
             if tn not in expected_numbers:
+                student_name = f"{s.get('last_name', '')} {s.get('first_name', '')}"
+                invalid_task_numbers.append(
+                    f"{d}: task_number={tn} (student: {student_name})"
+                )
+                # Still map to fallback but record the error
                 tn = fallback_process_tasknum
+
+            # Check for duplicates BEFORE overwriting
+            if tn in entry["dir_map"]:
+                existing_dir = entry["dir_map"][tn]
+                student_name = f"{s.get('last_name', '')} {s.get('first_name', '')} ({s.get('group_number', '')})"
+                duplicates.append(
+                    f"Student '{student_name}' has duplicate task-{tn}: "
+                    f"'{existing_dir}' and '{d}' - second one will be HIDDEN!"
+                )
+
             entry["dir_map"][tn] = d
+            processed_dirs.add(d)
+
+        # Check for directories that weren't processed
+        all_dirs = set(processes_dirs)
+        missing_dirs = all_dirs - processed_dirs
+        if missing_dirs:
+            for md in missing_dirs:
+                logger.error(f"Directory not processed (missing info.json?): {md}")
+
+        # Report invalid task_numbers as errors
+        if invalid_task_numbers:
+            logger.error("Directories with invalid task_number (not 1, 2, or 3):")
+            for err in invalid_task_numbers:
+                logger.error(f"  {err}")
+            raise ValueError(
+                f"Found {len(invalid_task_numbers)} directories with invalid task_number. "
+                "Fix info.json files before generating scoreboard."
+            )
+
+        # Report duplicates as FATAL errors - no work should be hidden
+        if duplicates:
+            logger.error("DUPLICATE TASK NUMBERS DETECTED - some work will be hidden!")
+            for dup in duplicates:
+                logger.error(f"  {dup}")
+            raise ValueError(
+                f"Found {len(duplicates)} duplicate (student, task_number) combinations. "
+                "Each student must have unique task_number for each task. "
+                "Fix info.json files before generating scoreboard."
+            )
 
         rows_local = []
         for key, entry in sorted(
@@ -1289,6 +1339,23 @@ def main():
                     "total": total_points_sum,
                 }
             )
+
+        # Final validation: count tasks actually included in scoreboard
+        total_tasks_in_scoreboard = sum(
+            len(entry["dir_map"]) for entry in identity_map.values()
+        )
+        logger.info(
+            f"Scoreboard processes: {len(rows_local)} students, "
+            f"{total_tasks_in_scoreboard} tasks from {len(processed_dirs)} directories"
+        )
+
+        # Verify all processed directories are accounted for
+        if total_tasks_in_scoreboard != len(processed_dirs):
+            logger.warning(
+                f"Task count mismatch: {total_tasks_in_scoreboard} in scoreboard vs "
+                f"{len(processed_dirs)} directories processed"
+            )
+
         return rows_local
 
     processes_rows = _build_process_rows(processes_task_dirs)
